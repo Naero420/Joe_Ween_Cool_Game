@@ -1,0 +1,105 @@
+[gd_scene format=3 uid="uid://deu5qlpd45o3l"]
+
+[ext_resource type="Script" uid="uid://do4ipkgxptj1q" path="res://player_(character_body_3d).gd" id="1_4flbx"]
+[ext_resource type="Shader" uid="uid://dgtespv75mhd4" path="res://player.gdshader" id="2_onrkg"]
+[ext_resource type="Script" uid="uid://cv8hr4n2mbtwg" path="res://hud(canvas_layer).gd" id="3_i3pqv"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i3pqv"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_onrkg"]
+resource_local_to_scene = true
+shader = ExtResource("2_onrkg")
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_i3pqv"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_onrkg"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_4flbx"]
+
+[sub_resource type="Sky" id="Sky_onrkg"]
+sky_material = SubResource("ProceduralSkyMaterial_4flbx")
+
+[sub_resource type="Environment" id="Environment_i3pqv"]
+background_mode = 2
+sky = SubResource("Sky_onrkg")
+fog_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_onrkg"]
+size = Vector3(100, 1, 100)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_onrkg"]
+
+[node name="Scene" type="Node3D" unique_id=16624816]
+
+[node name="player" type="CharacterBody3D" parent="." unique_id=138935]
+script = ExtResource("1_4flbx")
+max_speed = 15.0
+sprint_speed = 20.0
+brake_force = 28.0
+friction = 25.0
+rotation_speed = 1.5
+max_stamina = 3.0
+stamina_drain = 2.0
+stamina_recovery = 1.5
+shake_strength = 0.03
+shake_in_speed = 8.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="player" unique_id=103281588]
+shape = SubResource("CapsuleShape3D_i3pqv")
+
+[node name="CameraRig" type="Node3D" parent="player" unique_id=606164335]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="player/CameraRig" unique_id=635581316]
+transform = Transform3D(1, 0, 0, 0, 0.97623175, 0.2167293, 0, -0.2167293, 0.97623175, 0, 1.1075172, 1.3253632)
+spring_length = 4.0
+
+[node name="Camera3D" type="Camera3D" parent="player/CameraRig/SpringArm3D" unique_id=838037287]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4660702, 2.9093046)
+current = true
+
+[node name="ColorRect" type="ColorRect" parent="player/CameraRig/SpringArm3D/Camera3D" unique_id=1755297333]
+material = SubResource("ShaderMaterial_onrkg")
+offset_right = 321.0
+offset_bottom = 248.0
+
+[node name="Front" type="MeshInstance3D" parent="player" unique_id=1072432676]
+transform = Transform3D(0.5929141, 0, 0, 0, -0.012560475, 0.6233315, 0, -0.3976913, -0.019686976, 0, -0.3646222, -1.0155739)
+mesh = SubResource("CapsuleMesh_i3pqv")
+
+[node name="VisualPivot" type="Node3D" parent="player" unique_id=1702884253]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="player/VisualPivot" unique_id=2046554883]
+mesh = SubResource("CapsuleMesh_onrkg")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=640592314]
+transform = Transform3D(-0.017231792, 0.9508785, 0.30908456, -0.05293035, -0.30956456, 0.9494041, 0.99844956, -2.0470939e-08, 0.055664677, 21.140406, 5.0283966, 0)
+shadow_enabled = true
+
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=464178141]
+environment = SubResource("Environment_i3pqv")
+
+[node name="Terrain" type="Node3D" parent="." unique_id=1260538895]
+
+[node name="Main Ground" type="StaticBody3D" parent="Terrain" unique_id=671707845]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.1961398, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Terrain/Main Ground" unique_id=1950244257]
+mesh = SubResource("BoxMesh_onrkg")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Terrain/Main Ground" unique_id=1123247955]
+transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 100, 0, 0, 0)
+shape = SubResource("BoxShape3D_onrkg")
+
+[node name="Obstacles" type="Node3D" parent="." unique_id=648208069]
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1562916577]
+script = ExtResource("3_i3pqv")
+player_path = NodePath("../player")
+
+[node name="StaminaBar" type="ProgressBar" parent="HUD" unique_id=1912608973]
+modulate = Color(0, 1, 0, 1)
+offset_left = 23.0
+offset_top = 11.0
+offset_right = 166.0
+offset_bottom = 38.0
+value = 100.0
