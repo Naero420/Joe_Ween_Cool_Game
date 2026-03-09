@@ -21,6 +21,10 @@ window/size/viewport_width=320
 window/size/viewport_height=240
 window/stretch/mode="canvas_items"
 
+[dotnet]
+
+project/assembly_name="Joe Ween Cool Game"
+
 [input]
 
 ui_left={
