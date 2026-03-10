@@ -8,6 +8,7 @@ extends CharacterBody3D
 # --------------------
 # Movement tuning
 # --------------------
+@export_group("Movement Tuning")
 @export var max_speed: float = 6.0
 @export var sprint_speed: float = 10.0
 @export var reverse_speed: float = 3.0
@@ -27,6 +28,7 @@ extends CharacterBody3D
 # --------------------
 # Stamina
 # --------------------
+@export_group("Stamina")
 @export var max_stamina: float = 5.0
 @export var stamina_drain: float = 1.5
 @export var stamina_recovery: float = 1.0
@@ -39,6 +41,7 @@ var stamina_recovery_timer: float = 0.0
 # Camera lag (returns behind player)
 # CameraRig is a CHILD of Player, so "behind player" == local yaw 0
 # --------------------
+@export_group("Camera")
 @export var camera_lag_return_speed: float = 6.0  # higher = returns faster
 var cam_yaw_offset: float = 0.0
 var prev_player_yaw: float = 0.0
@@ -61,6 +64,7 @@ var cam_base_pos: Vector3 = Vector3.ZERO
 # --------------------
 # Momentum leaning
 # --------------------
+@export_group("Movement Leaning")
 @export var max_lean_degrees: float = 10.0
 @export var lean_speed: float = 8.0
 @export var lean_return_speed: float = 10.0
@@ -71,6 +75,7 @@ var lean_amount: float = 0.0 # [-1..1]
 # --------------------
 # Mouse gesture attacks
 # --------------------
+@export_group("Attacking")
 @export var attack_cooldown: float = 0.20
 
 # Longer window = easier to register
