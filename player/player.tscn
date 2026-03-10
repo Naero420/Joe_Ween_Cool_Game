@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://deu5qlpd45o3l"]
 
-[ext_resource type="Script" uid="uid://do4ipkgxptj1q" path="res://player_(character_body_3d).gd" id="1_4flbx"]
-[ext_resource type="Shader" uid="uid://dgtespv75mhd4" path="res://player.gdshader" id="2_onrkg"]
-[ext_resource type="Script" uid="uid://cv8hr4n2mbtwg" path="res://hud(canvas_layer).gd" id="3_i3pqv"]
+[ext_resource type="Script" uid="uid://do4ipkgxptj1q" path="res://player/player_controller.gd" id="1_4flbx"]
+[ext_resource type="Shader" uid="uid://dgtespv75mhd4" path="res://player/player.gdshader" id="2_onrkg"]
+[ext_resource type="Material" uid="uid://cif6pxmop7tgm" path="res://prototyping/materials/prototype_red_grid.tres" id="3_hqtel"]
+[ext_resource type="Script" uid="uid://cv8hr4n2mbtwg" path="res://gui/hud(canvas_layer).gd" id="3_i3pqv"]
+[ext_resource type="Material" uid="uid://bfj08qdj6kw45" path="res://prototyping/materials/prototype_black_checker.tres" id="4_sweqy"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i3pqv"]
 
@@ -24,14 +26,10 @@ background_mode = 2
 sky = SubResource("Sky_onrkg")
 fog_enabled = true
 
-[sub_resource type="BoxMesh" id="BoxMesh_onrkg"]
-size = Vector3(100, 1, 100)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_onrkg"]
-
 [node name="Scene" type="Node3D" unique_id=16624816]
 
 [node name="player" type="CharacterBody3D" parent="." unique_id=138935]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 script = ExtResource("1_4flbx")
 max_speed = 15.0
 sprint_speed = 20.0
@@ -80,15 +78,19 @@ environment = SubResource("Environment_i3pqv")
 
 [node name="Terrain" type="Node3D" parent="." unique_id=1260538895]
 
-[node name="Main Ground" type="StaticBody3D" parent="Terrain" unique_id=671707845]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.1961398, 0)
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="Terrain" unique_id=559313374]
+use_collision = true
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Terrain/Main Ground" unique_id=1950244257]
-mesh = SubResource("BoxMesh_onrkg")
+[node name="CSGBox3D" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=827453757]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, -9.815336)
+use_collision = true
+size = Vector3(5, 3, 1)
+material = ExtResource("3_hqtel")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Terrain/Main Ground" unique_id=1123247955]
-transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 100, 0, 0, 0)
-shape = SubResource("BoxShape3D_onrkg")
+[node name="CSG Floor" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=217743478]
+use_collision = true
+size = Vector3(100, 1, 100)
+material = ExtResource("4_sweqy")
 
 [node name="Obstacles" type="Node3D" parent="." unique_id=648208069]
 

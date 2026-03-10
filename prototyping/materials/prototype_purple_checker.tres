@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dud2rlhyi2yn2"]
+
+[ext_resource type="Texture2D" uid="uid://b2cro1vyaf7e1" path="res://prototyping/textures/purple_checker_texture_10.png" id="1_d2nla"]
+
+[resource]
+albedo_texture = ExtResource("1_d2nla")
+uv1_triplanar = true
+uv1_world_triplanar = true
