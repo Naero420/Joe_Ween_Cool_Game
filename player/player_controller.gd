@@ -8,11 +8,13 @@ extends CharacterBody3D
 # --------------------
 # Movement tuning
 # --------------------
+@export_group("Movement Tuning")
 @export var max_speed: float = 6.0
 @export var sprint_speed: float = 10.0
 @export var reverse_speed: float = 3.0
 
 @export var acceleration: float = 14.0
+@export var decceleration: float = 5.0
 @export var brake_force: float = 32.0
 @export var friction: float = 22.0
 @export var rotation_speed: float = 2.5
@@ -27,6 +29,7 @@ extends CharacterBody3D
 # --------------------
 # Stamina
 # --------------------
+@export_group("Stamina")
 @export var max_stamina: float = 5.0
 @export var stamina_drain: float = 1.5
 @export var stamina_recovery: float = 1.0
@@ -39,6 +42,7 @@ var stamina_recovery_timer: float = 0.0
 # Camera lag (returns behind player)
 # CameraRig is a CHILD of Player, so "behind player" == local yaw 0
 # --------------------
+@export_group("Camera")
 @export var camera_lag_return_speed: float = 6.0  # higher = returns faster
 var cam_yaw_offset: float = 0.0
 var prev_player_yaw: float = 0.0
@@ -61,6 +65,7 @@ var cam_base_pos: Vector3 = Vector3.ZERO
 # --------------------
 # Momentum leaning
 # --------------------
+@export_group("Movement Leaning")
 @export var max_lean_degrees: float = 10.0
 @export var lean_speed: float = 8.0
 @export var lean_return_speed: float = 10.0
@@ -71,6 +76,7 @@ var lean_amount: float = 0.0 # [-1..1]
 # --------------------
 # Mouse gesture attacks
 # --------------------
+@export_group("Attacking")
 @export var attack_cooldown: float = 0.20
 
 # Longer window = easier to register
@@ -117,29 +123,27 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# --------------------
-	# Gravity + Jump
-	# --------------------
+	# Applies gravity and jumping logic
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+	if Input.is_action_just_pressed(&"jump") and is_on_floor():
 		velocity.y = jump_velocity
 
 	# --------------------
 	# Sprinting state
 	# --------------------
-	var wants_forward: bool = Input.is_action_pressed("ui_up")
-	var wants_back: bool = Input.is_action_pressed("ui_down")
-	var wants_sprint: bool = Input.is_action_pressed("sprint")
+	var input_forward: bool = Input.is_action_pressed(&"move_forward")
+	var input_back: bool = Input.is_action_pressed(&"move_backward")
+	var input_sprint: bool = Input.is_action_pressed(&"sprint")
 
-	var sprinting: bool = wants_sprint and wants_forward and stamina > 0.0
+	var sprinting: bool = input_sprint and input_forward and stamina > 0.0
 
 	# --------------------
 	# Turning (disabled while sprinting)
 	# Turning slows down as speed increases
 	# --------------------
-	var turn_input: float = Input.get_axis("ui_left", "ui_right")
+	var turn_input: float = Input.get_axis(&"turn_left", &"turn_right")
 
 	var speed_ratio: float = clampf(abs(current_speed) / sprint_speed, 0.0, 1.0)
 	var turn_multiplier: float = lerpf(1.0, min_turn_multiplier_at_top_speed, speed_ratio)
@@ -175,21 +179,41 @@ func _physics_process(delta: float) -> void:
 	# S: brake then reverse
 	# No input: friction slow down
 	# --------------------
-	if wants_forward:
+	var current_acceleration : float = 0
+
+	if input_forward:
 		if sprinting:
 			current_speed = sprint_speed  # bypass acceleration
 		else:
-			current_speed = move_toward(current_speed, max_speed, acceleration * delta)
+			#current_speed = move_toward(current_speed, max_speed, acceleration * delta)
+			current_acceleration += acceleration
 
-	elif wants_back:
+	elif input_back:
+		"""
 		# If moving forward, brake to 0 first
 		if current_speed > 0.0:
 			current_speed = move_toward(current_speed, 0.0, brake_force * delta)
 		else:
 			current_speed = move_toward(current_speed, -reverse_speed, acceleration * delta)
+		"""
+		current_acceleration -= brake_force
 
+	# Deceleration when there is no input.
 	else:
-		current_speed = move_toward(current_speed, 0.0, friction * delta)
+		#current_speed = move_toward(current_speed, 0.0, friction * delta)
+		if (!is_on_floor()):
+			current_acceleration = 0
+		elif (current_speed > 0) :
+			current_acceleration -= decceleration
+		elif (current_speed < 0) :
+			current_acceleration += decceleration
+		
+	# Applies the accerlation to velocity
+	current_speed += current_acceleration * delta
+
+	# Caps speed at max speed in both directions
+	current_speed = clampf(current_speed, -max_speed, max_speed)
+	
 
 	# Snap tiny speeds to 0
 	if abs(current_speed) < stop_threshold:
@@ -202,6 +226,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+	"""
 	# --------------------
 	# Momentum leaning (visual only)
 	# --------------------
@@ -259,6 +284,7 @@ func _physics_process(delta: float) -> void:
 			if speed >= swipe_min_speed or distance >= swipe_min_distance:
 				_trigger_mouse_attack_tolerant(swipe, speed)
 				attack_cd_timer = attack_cooldown
+	"""
 
 
 func _trigger_mouse_attack(swipe: Vector2, swipe_speed: float) -> void:

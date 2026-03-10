@@ -1,6 +1,8 @@
 extends CanvasLayer
 
 @onready var stamina_bar: ProgressBar = $StaminaBar
+@onready var speedometer: Label = $Speedometer
+
 @export var player_path: NodePath
 
 var player: Node = null
@@ -16,6 +18,11 @@ func _process(_delta: float) -> void:
 	if player == null:
 		return
 
+	stamina_process()
+	speed_process()
+
+# Updates the stamina bar UI element
+func stamina_process() -> void:
 	var max_stam: float = float(player.get("max_stamina"))
 	var stam: float = float(player.get("stamina"))
 
@@ -23,3 +30,9 @@ func _process(_delta: float) -> void:
 	stamina_bar.value = stam
 	
 	stamina_bar.visible = stamina_bar.value < stamina_bar.max_value
+
+# Updates the speedometer UI element
+func speed_process() -> void:
+	var player_speed: Vector3 = player.get("velocity")
+	var horizontal_speed = Vector2(player_speed[0],player_speed[2])
+	speedometer.text = str(horizontal_speed.length()) + " m/s"
