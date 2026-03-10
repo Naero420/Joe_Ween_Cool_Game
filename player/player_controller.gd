@@ -196,7 +196,10 @@ func _physics_process(delta: float) -> void:
 		else:
 			current_speed = move_toward(current_speed, -reverse_speed, acceleration * delta)
 		"""
-		current_acceleration -= brake_force
+		if (current_speed <= stop_threshold):
+			current_speed = -reverse_speed
+		else:
+			current_acceleration -= brake_force
 
 	# Deceleration when there is no input.
 	else:
