@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://deu5qlpd45o3l"]
+
+[ext_resource type="PackedScene" uid="uid://b7ejlatl8s8vp" path="res://player/player.tscn" id="1_i5e4g"]
+[ext_resource type="Material" uid="uid://cif6pxmop7tgm" path="res://prototyping/materials/prototype_red_grid.tres" id="2_pvbb1"]
+[ext_resource type="Material" uid="uid://bfj08qdj6kw45" path="res://prototyping/materials/prototype_black_checker.tres" id="3_0bul0"]
+[ext_resource type="Material" uid="uid://c2f5kpnqvar38" path="res://prototyping/materials/prototype_white_grid.tres" id="4_rl8gb"]
+[ext_resource type="Material" uid="uid://brx6m6amabe6y" path="res://prototyping/materials/prototype_black_grid.tres" id="5_3sjje"]
+[ext_resource type="PackedScene" uid="uid://bx5afr2fkl2kw" path="res://ui/hud.tscn" id="6_i5e4g"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_4flbx"]
+
+[sub_resource type="Sky" id="Sky_onrkg"]
+sky_material = SubResource("ProceduralSkyMaterial_4flbx")
+
+[sub_resource type="Environment" id="Environment_i3pqv"]
+background_mode = 2
+sky = SubResource("Sky_onrkg")
+fog_enabled = true
+
+[node name="Scene" type="Node3D" unique_id=16624816]
+
+[node name="player" parent="." unique_id=365831199 instance=ExtResource("1_i5e4g")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=640592314]
+transform = Transform3D(-0.017231792, 0.9508785, 0.30908456, -0.05293035, -0.30956456, 0.9494041, 0.99844956, -2.0470939e-08, 0.055664677, 21.140406, 5.0283966, 0)
+shadow_enabled = true
+
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=464178141]
+environment = SubResource("Environment_i3pqv")
+
+[node name="Terrain" type="Node3D" parent="." unique_id=1260538895]
+
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="Terrain" unique_id=559313374]
+use_collision = true
+
+[node name="CSGBox3D" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=827453757]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2.5, -15.315336)
+use_collision = true
+size = Vector3(9, 4, 10)
+material = ExtResource("2_pvbb1")
+
+[node name="CSG Floor" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=217743478]
+use_collision = true
+size = Vector3(200, 1, 200)
+material = ExtResource("3_0bul0")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=1405213889]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 2.5, -15.630337)
+use_collision = true
+size = Vector3(9, 4, 10)
+material = ExtResource("2_pvbb1")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=1775249747]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2.5, 14.129198)
+material_override = ExtResource("4_rl8gb")
+use_collision = true
+size = Vector3(9, 4, 10)
+material = ExtResource("5_3sjje")
+
+[node name="CSGBox3D4" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=608158821]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 2.5, 13.814198)
+use_collision = true
+size = Vector3(9, 4, 10)
+material = ExtResource("2_pvbb1")
+
+[node name="Obstacles" type="Node3D" parent="." unique_id=648208069]
+
+[node name="HUD" parent="." unique_id=1238948079 instance=ExtResource("6_i5e4g")]
