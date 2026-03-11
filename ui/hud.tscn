@@ -21,3 +21,11 @@ offset_right = 1280.0
 offset_bottom = 959.0
 text = "m/s"
 horizontal_alignment = 2
+
+[node name="FPSMeter" type="Label" parent="." unique_id=154239734]
+offset_left = 993.0
+offset_top = 1.0
+offset_right = 1280.0
+offset_bottom = 24.0
+text = "fps"
+horizontal_alignment = 2
