@@ -113,6 +113,17 @@ var attack_cd_timer: float = 0.0
 var gravity: float = 9.8
 var current_speed: float = 0.0
 
+# Player Inputs
+var input_forward: bool
+var input_back: bool
+var turn_input: float
+var input_sprint: bool
+var input_crouch: bool
+
+# Player states
+var is_sprinting: bool
+var is_drifting: bool
+
 
 func _ready() -> void:
 	gravity = float(ProjectSettings.get_setting("physics/3d/default_gravity"))
@@ -142,29 +153,8 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"jump") and is_on_floor():
 		velocity.y = jump_velocity
 
-	# Input Variables
-	var input_forward: bool = Input.is_action_pressed(&"move_forward")
-	var input_back: bool = Input.is_action_pressed(&"move_backward")
-	var turn_input: float = Input.get_axis(&"turn_left", &"turn_right")
-	var input_sprint: bool = Input.is_action_pressed(&"sprint")
-	var input_crouch: bool = Input.is_action_pressed(&"crouch")
-
-	var sprinting: bool = input_sprint and input_forward and stamina > 0.0
-	var drifting: bool = input_crouch and current_speed > 0.0
-
-	# --------------------
-	# Turning (disabled while sprinting)
-	# Turning slows down as speed increases
-	# --------------------
-
-	var speed_ratio: float = clampf(abs(current_speed) / sprint_speed, 0.0, 1.0)
-	var turn_multiplier: float = lerpf(1.0, min_turn_multiplier_at_top_speed, speed_ratio)
-	var drift_turn_multiplier: float = lerpf(1.0, min_drift_turn_multiplier_at_top_speed, speed_ratio)
-
-	if not sprinting:
-		rotation.y -= turn_input * rotation_speed * turn_multiplier * delta
-	elif drifting:
-		rotation.y -= turn_input * drift_rotation_speed * drift_turn_multiplier * delta
+	input_process()
+	move_process(delta)
 
 	# --------------------
 	# Camera lag (yaw offset that returns to 0)
@@ -175,62 +165,6 @@ func _physics_process(delta: float) -> void:
 	cam_yaw_offset -= player_yaw_delta
 	cam_yaw_offset = lerpf(cam_yaw_offset, 0.0, clampf(camera_lag_return_speed * delta, 0.0, 1.0))
 	camera_rig.rotation.y = cam_yaw_offset
-
-	# Stamina recovery with delay
-	if sprinting:
-		stamina = max(stamina - stamina_drain * delta, 0.0)
-		stamina_recovery_timer = stamina_recovery_delay
-	else:
-		if stamina_recovery_timer > 0.0:
-			stamina_recovery_timer = max(stamina_recovery_timer - delta, 0.0)
-		else:
-			stamina = min(stamina + stamina_recovery * delta, max_stamina)
-
-	# Movement
-	var current_acceleration : float = 0
-
-	if drifting && is_on_floor():
-		current_acceleration += -decceleration * 0.2
-	elif input_forward:
-		if sprinting:
-			current_speed = sprint_speed  # bypass acceleration
-		else:
-			#current_speed = move_toward(current_speed, max_speed, acceleration * delta)
-			current_acceleration += acceleration
-
-	elif input_back:
-		# If the player is moving forward, break to 0 before walking backwards.
-		if (current_speed <= stop_threshold):
-			current_speed = -reverse_speed
-		else:
-			current_acceleration += -brake_force
-
-	# Slow down grounded player when there is no input.
-	else:
-		if (!is_on_floor()):
-			current_acceleration += 0
-		elif (current_speed > 0) :
-			current_acceleration += -decceleration
-		elif (current_speed < 0) :
-			current_acceleration += decceleration
-		
-	# Applies the acceleration to velocity
-	current_speed += current_acceleration * delta
-
-	# Caps speed at max speed in both directions
-	# TODO: Remove speed limit. This limit is here to stop the speed from running from going infinite. Write logic to handle that first before removing this.
-	current_speed = clampf(current_speed, -max_speed, max_speed)
-	
-	# Snap tiny speeds to 0
-	if abs(current_speed) < stop_threshold:
-		current_speed = 0.0
-
-	# Apply movement in facing direction
-	var forward: Vector3 = -transform.basis.z
-	velocity.x = forward.x * current_speed
-	velocity.z = forward.z * current_speed
-
-	move_and_slide()
 
 	"""
 	# --------------------
@@ -291,7 +225,89 @@ func _physics_process(delta: float) -> void:
 				_trigger_mouse_attack_tolerant(swipe, speed)
 				attack_cd_timer = attack_cooldown
 	"""
+func input_process() -> void:
+	# Input Variables
+	input_forward = Input.is_action_pressed(&"move_forward")
+	input_back = Input.is_action_pressed(&"move_backward")
+	turn_input = Input.get_axis(&"turn_left", &"turn_right")
+	input_sprint = Input.is_action_pressed(&"sprint")
+	input_crouch = Input.is_action_pressed(&"crouch")
 
+	# TODO: Should these variables be moved to move_process instead of local?
+	is_sprinting = input_sprint and input_forward and stamina > 0.0
+	is_drifting = input_crouch and current_speed > 0.0
+
+func move_process(delta: float) -> void:
+	
+	# --------------------
+	# Turning (disabled while sprinting)
+	# Turning slows down as speed increases
+	# --------------------
+
+	var speed_ratio: float = clampf(abs(current_speed) / sprint_speed, 0.0, 1.0)
+	var turn_multiplier: float = lerpf(1.0, min_turn_multiplier_at_top_speed, speed_ratio)
+	var drift_turn_multiplier: float = lerpf(1.0, min_drift_turn_multiplier_at_top_speed, speed_ratio)
+
+	if not is_sprinting:
+		rotation.y -= turn_input * rotation_speed * turn_multiplier * delta
+	elif is_drifting:
+		rotation.y -= turn_input * drift_rotation_speed * drift_turn_multiplier * delta
+
+	# Stamina recovery with delay
+	if is_sprinting:
+		stamina = max(stamina - stamina_drain * delta, 0.0)
+		stamina_recovery_timer = stamina_recovery_delay
+	else:
+		if stamina_recovery_timer > 0.0:
+			stamina_recovery_timer = max(stamina_recovery_timer - delta, 0.0)
+		else:
+			stamina = min(stamina + stamina_recovery * delta, max_stamina)
+
+	# Movement
+	var current_acceleration : float = 0
+
+	if is_drifting && is_on_floor():
+		current_acceleration += -decceleration * 0.2
+	elif input_forward:
+		if is_sprinting:
+			current_speed = sprint_speed  # bypass acceleration
+		else:
+			#current_speed = move_toward(current_speed, max_speed, acceleration * delta)
+			current_acceleration += acceleration
+
+	elif input_back:
+		# If the player is moving forward, break to 0 before walking backwards.
+		if (current_speed <= stop_threshold):
+			current_speed = -reverse_speed
+		else:
+			current_acceleration += -brake_force
+
+	# Slow down grounded player when there is no input.
+	else:
+		if (!is_on_floor()):
+			current_acceleration += 0
+		elif (current_speed > 0) :
+			current_acceleration += -decceleration
+		elif (current_speed < 0) :
+			current_acceleration += decceleration
+		
+	# Applies the acceleration to velocity
+	current_speed += current_acceleration * delta
+
+	# Caps speed at max speed in both directions
+	# TODO: Remove speed limit. This limit is here to stop the speed from running from going infinite. Write logic to handle that first before removing this.
+	current_speed = clampf(current_speed, -max_speed, max_speed)
+	
+	# Snap tiny speeds to 0
+	if abs(current_speed) < stop_threshold:
+		current_speed = 0.0
+
+	# Apply movement in facing direction
+	var forward: Vector3 = -transform.basis.z
+	velocity.x = forward.x * current_speed
+	velocity.z = forward.z * current_speed
+
+	move_and_slide()
 
 func _trigger_mouse_attack(swipe: Vector2, swipe_speed: float) -> void:
 	var dir: Vector2 = swipe.normalized()
