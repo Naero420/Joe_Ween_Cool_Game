@@ -365,6 +365,8 @@ func _trigger_mouse_attack_tolerant(swipe: Vector2, swipe_speed: float) -> void:
 	else:
 		jab()
 		
+func get_speed() -> float :
+	return current_speed
 
 # --------------------
 # Attack hooks (replace prints with animations/hitboxes later)
