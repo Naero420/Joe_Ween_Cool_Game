@@ -114,6 +114,8 @@ var attack_cd_timer: float = 0.0
 # Runtime
 # --------------------
 var gravity: float = 9.8
+var friction_delay: float = 0.1
+var friction_time: float = 0
 ## Represents forward speed
 var current_speed: float = 0.0
 
@@ -270,9 +272,19 @@ func _move_process(delta: float) -> void:
 	# Movement
 	var acceleration_force : float = 0
 
-	var friction_force: float = _get_friction_force()
+	# Movement: Friction
+	var friction_force: float = 0 
+	friction_force += _get_friction_force()
 
-	acceleration_force += -friction_force
+	if is_on_floor():
+		if friction_time <= 0:
+			acceleration_force += -friction_force
+		else:
+			friction_time = clampf(friction_time - delta, 0, friction_delay)
+	else:
+		friction_time = friction_delay
+
+	#acceleration_force += -friction_force
 	if input_forward:
 		acceleration_force += acceleration
 		if is_on_floor():
@@ -306,7 +318,6 @@ func _move_process(delta: float) -> void:
 # Returns the force value of the object. #TODO: Reword this to sound more comphresionsible
 func _get_friction_force() -> float:
 	var force: float = 0.0
-
 	# Applies friction when the player is on the ground
 	if is_on_floor():
 		if is_drifting:
