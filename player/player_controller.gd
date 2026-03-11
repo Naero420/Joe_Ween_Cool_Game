@@ -17,8 +17,11 @@ extends CharacterBody3D
 
 ## Force applied to player when forward input is inputted
 @export var acceleration: float = 14.0
-## Force applied to player when they are on the ground and no input is given.
-@export var decceleration: float = 15.0
+## Force applied to player when they are on the ground
+@export var friction: float = 15.0
+## Force multiplier applied to player when they are on the ground and drifting (0.25 = 25% of friction is applied)
+@export var drift_friction_multiplier: float = 0.2
+## Force applied when the backward movement key is held when player is moving forward
 @export var brake_force: float = 28.0
 #@export var friction: float = 30.0
 
@@ -153,8 +156,8 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"jump") and is_on_floor():
 		velocity.y = jump_velocity
 
-	input_process()
-	move_process(delta)
+	_input_process()
+	_move_process(delta)
 
 	# --------------------
 	# Camera lag (yaw offset that returns to 0)
@@ -225,7 +228,7 @@ func _physics_process(delta: float) -> void:
 				_trigger_mouse_attack_tolerant(swipe, speed)
 				attack_cd_timer = attack_cooldown
 	"""
-func input_process() -> void:
+func _input_process() -> void:
 	# Input Variables
 	input_forward = Input.is_action_pressed(&"move_forward")
 	input_back = Input.is_action_pressed(&"move_backward")
@@ -237,7 +240,7 @@ func input_process() -> void:
 	is_sprinting = input_sprint and input_forward and stamina > 0.0
 	is_drifting = input_crouch and current_speed > 0.0
 
-func move_process(delta: float) -> void:
+func _move_process(delta: float) -> void:
 	
 	# --------------------
 	# Turning (disabled while sprinting)
@@ -264,35 +267,47 @@ func move_process(delta: float) -> void:
 			stamina = min(stamina + stamina_recovery * delta, max_stamina)
 
 	# Movement
-	var current_acceleration : float = 0
-
+	var acceleration_force : float = 0
+	
+	# Drifting
 	if is_drifting && is_on_floor():
-		current_acceleration += -decceleration * 0.2
+		acceleration_force += -friction * drift_friction_multiplier
 	elif input_forward:
 		if is_sprinting:
 			current_speed = sprint_speed  # bypass acceleration
 		else:
-			#current_speed = move_toward(current_speed, max_speed, acceleration * delta)
-			current_acceleration += acceleration
+			acceleration_force += acceleration
 
 	elif input_back:
 		# If the player is moving forward, break to 0 before walking backwards.
 		if (current_speed <= stop_threshold):
 			current_speed = -reverse_speed
 		else:
-			current_acceleration += -brake_force
+			acceleration_force += -brake_force
 
 	# Slow down grounded player when there is no input.
 	else:
 		if (!is_on_floor()):
-			current_acceleration += 0
+			acceleration_force += 0
 		elif (current_speed > 0) :
-			current_acceleration += -decceleration
+			acceleration_force += -friction
 		elif (current_speed < 0) :
-			current_acceleration += decceleration
+			acceleration_force += friction
+	
+	"""
+	acceleration_force += _get_friction_force()
+	if input_forward:
+		acceleration_force += acceleration
+	"""
+	if input_back:
+		# If the player is moving forward, break to 0 before walking backwards.
+		if (current_speed <= stop_threshold):
+			current_speed = -reverse_speed
+		else:
+			acceleration_force += -brake_force
 		
 	# Applies the acceleration to velocity
-	current_speed += current_acceleration * delta
+	current_speed += acceleration_force * delta
 
 	# Caps speed at max speed in both directions
 	# TODO: Remove speed limit. This limit is here to stop the speed from running from going infinite. Write logic to handle that first before removing this.
@@ -308,6 +323,21 @@ func move_process(delta: float) -> void:
 	velocity.z = forward.z * current_speed
 
 	move_and_slide()
+
+# Returns the force value of the object. #TODO: Reword this to sound more comphresionsible
+func _get_friction_force() -> float:
+	var force: float = 0.0
+
+	# Applies friction when the player is on the ground
+	if is_on_floor():
+		if is_drifting:
+			force += friction * drift_friction_multiplier
+		elif current_speed > 0 :
+			force += -friction
+		elif current_speed < 0 :
+			force += friction
+
+	return force
 
 func _trigger_mouse_attack(swipe: Vector2, swipe_speed: float) -> void:
 	var dir: Vector2 = swipe.normalized()
