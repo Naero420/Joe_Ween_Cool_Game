@@ -80,8 +80,6 @@ environment = SubResource("Environment_i3pqv")
 
 [node name="Terrain" type="Node3D" parent="." unique_id=1260538895]
 
-[node name="StaticBody3D" type="StaticBody3D" parent="Terrain" unique_id=73358231]
-
 [node name="CSGCombiner3D" type="CSGCombiner3D" parent="Terrain" unique_id=559313374]
 use_collision = true
 
