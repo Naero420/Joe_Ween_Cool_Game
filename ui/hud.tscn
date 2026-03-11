@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://bx5afr2fkl2kw"]
+
+[ext_resource type="Script" uid="uid://cv8hr4n2mbtwg" path="res://ui/hud(canvas_layer).gd" id="1_350da"]
+
+[node name="HUD" type="CanvasLayer" unique_id=1238948079]
+script = ExtResource("1_350da")
+player_path = NodePath("../player")
+
+[node name="StaminaBar" type="ProgressBar" parent="." unique_id=97547330]
+modulate = Color(0, 1, 0, 1)
+offset_left = 23.0
+offset_top = 11.0
+offset_right = 166.0
+offset_bottom = 38.0
+value = 100.0
+
+[node name="Speedometer" type="Label" parent="." unique_id=990753685]
+offset_left = 993.0
+offset_top = 936.0
+offset_right = 1280.0
+offset_bottom = 959.0
+text = "m/s"
+horizontal_alignment = 2
