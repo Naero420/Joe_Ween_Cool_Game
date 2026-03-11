@@ -7,6 +7,8 @@
 [ext_resource type="Script" uid="uid://cv8hr4n2mbtwg" path="res://gui/hud(canvas_layer).gd" id="3_i3pqv"]
 [ext_resource type="Animation" uid="uid://cl7vc3hxxi1e" path="res://Animation/Charge.res" id="4_2ieo8"]
 [ext_resource type="Material" uid="uid://bfj08qdj6kw45" path="res://prototyping/materials/prototype_black_checker.tres" id="4_sweqy"]
+[ext_resource type="Material" uid="uid://c2f5kpnqvar38" path="res://prototyping/materials/prototype_white_grid.tres" id="5_boad6"]
+[ext_resource type="Material" uid="uid://brx6m6amabe6y" path="res://prototyping/materials/prototype_black_grid.tres" id="6_rgyib"]
 [ext_resource type="Animation" uid="uid://ilq4pnoy754e" path="res://Animation/Idle.res" id="5_ebec5"]
 [ext_resource type="Animation" uid="uid://bjqrut0wej2vk" path="res://Animation/Run.res" id="6_yllr7"]
 [ext_resource type="Animation" uid="uid://c1joejymdhyqa" path="res://Animation/Walk.res" id="7_kb6p2"]
@@ -592,13 +594,10 @@ fog_enabled = true
 [node name="player" type="CharacterBody3D" parent="." unique_id=138935]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 script = ExtResource("1_4flbx")
-max_speed = 20.0
 sprint_speed = 20.0
-reverse_speed = 6.0
-decceleration = 15.0
-brake_force = 28.0
-friction = 30.0
-rotation_speed = 5.0
+rotation_speed = 4.5
+drift_rotation_speed = 8.0
+min_drift_turn_multiplier_at_top_speed = 0.25
 stop_threshold = 0.2
 max_stamina = 3.0
 stamina_drain = 2.0
@@ -1045,16 +1044,29 @@ use_collision = true
 size = Vector3(9, 4, 10)
 material = ExtResource("3_hqtel")
 
-[node name="CSGBox3D" type="CSGBox3D" parent="Terrain/CSGCombiner3D/CSGBox3D" unique_id=1405213889]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, -0.31500053)
-use_collision = true
-size = Vector3(9, 4, 10)
-material = ExtResource("3_hqtel")
-
 [node name="CSG Floor" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=217743478]
 use_collision = true
 size = Vector3(200, 1, 200)
 material = ExtResource("4_sweqy")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=1405213889]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 2.5, -15.630337)
+use_collision = true
+size = Vector3(9, 4, 10)
+material = ExtResource("3_hqtel")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=1775249747]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2.5, 14.129198)
+material_override = ExtResource("5_boad6")
+use_collision = true
+size = Vector3(9, 4, 10)
+material = ExtResource("6_rgyib")
+
+[node name="CSGBox3D4" type="CSGBox3D" parent="Terrain/CSGCombiner3D" unique_id=608158821]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 2.5, 13.814198)
+use_collision = true
+size = Vector3(9, 4, 10)
+material = ExtResource("3_hqtel")
 
 [node name="Obstacles" type="Node3D" parent="." unique_id=648208069]
 
