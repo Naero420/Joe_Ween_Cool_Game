@@ -8,22 +8,34 @@ extends CharacterBody3D
 # --------------------
 # Movement tuning
 # --------------------
-@export_group("Movement Tuning")
-@export var max_speed: float = 6.0
+@export_group("Movement")
+## Maximum speed the player can reach when accelerating
+@export var max_speed: float = 20.0
 @export var sprint_speed: float = 10.0
-@export var reverse_speed: float = 3.0
+## Speed when walking backwards
+@export var reverse_speed: float = 6.0
 
+## Force applied to player when forward input is inputted
 @export var acceleration: float = 14.0
-@export var decceleration: float = 5.0
-@export var brake_force: float = 32.0
-@export var friction: float = 22.0
-@export var rotation_speed: float = 2.5
+## Force applied to player when they are on the ground and no input is given.
+@export var decceleration: float = 15.0
+@export var brake_force: float = 28.0
+#@export var friction: float = 30.0
+
 @export var jump_velocity: float = 4.5
 
-# Turning slows down at higher speed (0.25 = 25% turning at top speed)
-@export var min_turn_multiplier_at_top_speed: float = 0.25
+@export_subgroup("Turning")
+## Turning speed in degrees
+@export var rotation_speed: float = 5
+## Turning speed in degrees while drifting
+@export var drift_rotation_speed: float = 10
 
-# Prevent micro sliding
+## Slows down turning at high speed (0.25 = 25% turning at top speed)
+@export var min_turn_multiplier_at_top_speed: float = 0.25
+## Slows down turning at high speed when drifting (0.25 = 25% turning at top speed)
+@export var min_drift_turn_multiplier_at_top_speed: float = 0.5
+
+## Speed slower than this value is set to 0.
 @export var stop_threshold: float = 0.05
 
 # --------------------
@@ -130,26 +142,29 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"jump") and is_on_floor():
 		velocity.y = jump_velocity
 
-	# --------------------
-	# Sprinting state
-	# --------------------
+	# Input Variables
 	var input_forward: bool = Input.is_action_pressed(&"move_forward")
 	var input_back: bool = Input.is_action_pressed(&"move_backward")
+	var turn_input: float = Input.get_axis(&"turn_left", &"turn_right")
 	var input_sprint: bool = Input.is_action_pressed(&"sprint")
+	var input_crouch: bool = Input.is_action_pressed(&"crouch")
 
 	var sprinting: bool = input_sprint and input_forward and stamina > 0.0
+	var drifting: bool = input_crouch and current_speed > 0.0
 
 	# --------------------
 	# Turning (disabled while sprinting)
 	# Turning slows down as speed increases
 	# --------------------
-	var turn_input: float = Input.get_axis(&"turn_left", &"turn_right")
 
 	var speed_ratio: float = clampf(abs(current_speed) / sprint_speed, 0.0, 1.0)
 	var turn_multiplier: float = lerpf(1.0, min_turn_multiplier_at_top_speed, speed_ratio)
+	var drift_turn_multiplier: float = lerpf(1.0, min_drift_turn_multiplier_at_top_speed, speed_ratio)
 
 	if not sprinting:
 		rotation.y -= turn_input * rotation_speed * turn_multiplier * delta
+	elif drifting:
+		rotation.y -= turn_input * drift_rotation_speed * drift_turn_multiplier * delta
 
 	# --------------------
 	# Camera lag (yaw offset that returns to 0)
@@ -161,9 +176,7 @@ func _physics_process(delta: float) -> void:
 	cam_yaw_offset = lerpf(cam_yaw_offset, 0.0, clampf(camera_lag_return_speed * delta, 0.0, 1.0))
 	camera_rig.rotation.y = cam_yaw_offset
 
-	# --------------------
-	# Stamina (with recovery delay)
-	# --------------------
+	# Stamina recovery with delay
 	if sprinting:
 		stamina = max(stamina - stamina_drain * delta, 0.0)
 		stamina_recovery_timer = stamina_recovery_delay
@@ -173,15 +186,12 @@ func _physics_process(delta: float) -> void:
 		else:
 			stamina = min(stamina + stamina_recovery * delta, max_stamina)
 
-	# --------------------
-	# Movement (fixed + clean)
-	# W: forward (accel), Sprint: instant sprint speed
-	# S: brake then reverse
-	# No input: friction slow down
-	# --------------------
+	# Movement
 	var current_acceleration : float = 0
 
-	if input_forward:
+	if drifting && is_on_floor():
+		current_acceleration += -decceleration * 0.2
+	elif input_forward:
 		if sprinting:
 			current_speed = sprint_speed  # bypass acceleration
 		else:
@@ -189,35 +199,28 @@ func _physics_process(delta: float) -> void:
 			current_acceleration += acceleration
 
 	elif input_back:
-		"""
-		# If moving forward, brake to 0 first
-		if current_speed > 0.0:
-			current_speed = move_toward(current_speed, 0.0, brake_force * delta)
-		else:
-			current_speed = move_toward(current_speed, -reverse_speed, acceleration * delta)
-		"""
+		# If the player is moving forward, break to 0 before walking backwards.
 		if (current_speed <= stop_threshold):
 			current_speed = -reverse_speed
 		else:
-			current_acceleration -= brake_force
+			current_acceleration += -brake_force
 
-	# Deceleration when there is no input.
+	# Slow down grounded player when there is no input.
 	else:
-		#current_speed = move_toward(current_speed, 0.0, friction * delta)
 		if (!is_on_floor()):
-			current_acceleration = 0
+			current_acceleration += 0
 		elif (current_speed > 0) :
-			current_acceleration -= decceleration
+			current_acceleration += -decceleration
 		elif (current_speed < 0) :
 			current_acceleration += decceleration
 		
-	# Applies the accerlation to velocity
+	# Applies the acceleration to velocity
 	current_speed += current_acceleration * delta
 
 	# Caps speed at max speed in both directions
+	# TODO: Remove speed limit. This limit is here to stop the speed from running from going infinite. Write logic to handle that first before removing this.
 	current_speed = clampf(current_speed, -max_speed, max_speed)
 	
-
 	# Snap tiny speeds to 0
 	if abs(current_speed) < stop_threshold:
 		current_speed = 0.0
