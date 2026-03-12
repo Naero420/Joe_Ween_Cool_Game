@@ -39,7 +39,7 @@ func _ready():
 
 func _physics_process(_delta):
 
-	var speed: float = player.current_speed
+	var speed: float = player.get_speed()
 	var vertical_velocity: float = player.velocity.y
 	var on_floor: bool = player.is_on_floor()
 
