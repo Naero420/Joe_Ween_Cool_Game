@@ -12,8 +12,8 @@ extends CharacterBody3D
 ## Maximum speed the player can reach when accelerating
 @export var max_speed: float = 20.0
 @export var sprint_speed: float = 10.0
-## Speed when walking backwards
-@export var reverse_speed: float = 6.0
+## Speed when walking
+@export var walk_speed: float = 6.0
 
 ## Force applied to player when forward input is inputted
 @export var acceleration: float = 14.0
@@ -120,16 +120,19 @@ var friction_time: float = 0
 var current_speed: float = 0.0
 
 # Player Inputs
-var input_forward: bool
-var input_back: bool
-var turn_input: float
-var input_sprint: bool
-var input_crouch: bool
+var _input_forward: bool
+var _input_back: bool
+var _turn_input: float
+var _input_sprint: bool
+var _input_crouch: bool
+var _input_walk: bool
 
 # Player states
 var is_sprinting: bool
 var is_drifting: bool
 var is_falling: bool
+var is_walking: bool
+var is_braking: bool
 
 
 func _ready() -> void:
@@ -222,15 +225,18 @@ func _physics_process(delta: float) -> void:
 	"""
 func _input_process() -> void:
 	# Input Variables
-	input_forward = Input.is_action_pressed(&"move_forward")
-	input_back = Input.is_action_pressed(&"move_backward")
-	turn_input = Input.get_axis(&"turn_left", &"turn_right")
-	input_sprint = Input.is_action_pressed(&"sprint")
-	input_crouch = Input.is_action_pressed(&"crouch")
+	_input_forward = Input.is_action_pressed(&"move_forward")
+	_input_back = Input.is_action_pressed(&"move_backward")
+	_turn_input = Input.get_axis(&"turn_left", &"turn_right")
+	_input_sprint = Input.is_action_pressed(&"sprint")
+	_input_crouch = Input.is_action_pressed(&"crouch")
+	_input_walk = Input.is_action_pressed(&"walk")
 
 	# TODO: Should these variables be moved to move_process instead of local?
-	is_sprinting = input_sprint and input_forward and stamina > 0.0
-	is_drifting = input_crouch and current_speed > 0.0
+	is_sprinting = _input_sprint and _input_forward and stamina > 0.0
+	#is_braking = _input_back || (_input_walk && _input_forward)
+	is_walking = _input_back || (_input_walk && _input_forward)
+	is_drifting = _input_crouch and current_speed > 0.0 and not is_walking
 
 func _move_process(delta: float) -> void:
 	
@@ -244,9 +250,9 @@ func _move_process(delta: float) -> void:
 	var drift_turn_multiplier: float = lerpf(1.0, min_drift_turn_multiplier_at_top_speed, speed_ratio)
 
 	if not is_sprinting:
-		rotation.y -= turn_input * rotation_speed * turn_multiplier * delta
+		rotation.y -= _turn_input * rotation_speed * turn_multiplier * delta
 	elif is_drifting:
-		rotation.y -= turn_input * drift_rotation_speed * drift_turn_multiplier * delta
+		rotation.y -= _turn_input * drift_rotation_speed * drift_turn_multiplier * delta
 
 	# Stamina recovery with delay
 	if is_sprinting:
@@ -263,8 +269,13 @@ func _move_process(delta: float) -> void:
 
 	# Movement: Friction
 	var friction_force: float = 0 
-	friction_force += _get_friction_force()
 
+	if (is_walking && is_on_floor()):
+		friction_force = 0
+	else:
+		friction_force += _get_friction_force()
+
+	# Bunny hop logic: Friction is given a delay before it is applied when the player touches the floor
 	if is_on_floor():
 		if friction_time <= 0:
 			acceleration_force += -friction_force
@@ -273,18 +284,28 @@ func _move_process(delta: float) -> void:
 	else:
 		friction_time = friction_delay
 
-	#acceleration_force += -friction_force
-	if input_forward:
-		acceleration_force += acceleration
-		if is_on_floor():
-			acceleration_force += friction_force
-	
-	if input_back:
+	if _input_forward:
+		# Slow the player down through braking before they can walk
+		if is_walking:
+			if current_speed < walk_speed + stop_threshold:
+				current_speed = walk_speed
+				is_braking = false
+			else: 
+				acceleration_force += -brake_force
+				is_braking = true
+		else:
+			acceleration_force += acceleration
+			if is_on_floor():
+				acceleration_force += friction_force
+
+	if _input_back:	
 		# If the player is moving forward, break to 0 before walking backwards.
 		if (current_speed <= stop_threshold):
-			current_speed = -reverse_speed
+			current_speed = -walk_speed
+			is_braking = false
 		else:
 			acceleration_force += -brake_force
+			is_braking = true
 		
 	# Applies the acceleration to velocity
 	current_speed += acceleration_force * delta
