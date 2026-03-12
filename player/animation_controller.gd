@@ -1,64 +1,163 @@
 extends Node
 
+enum AnimState {
+	IDLE,
+	WALK,
+	RUN,
+	CHARGE,
+	JUMP,
+	FALL,
+	DRIFTL,
+	DRIFTR,
+	CROUCH,
+	DROPKICK,
+	TURNL,
+	TURNR
+}
+
 @export var player_path: NodePath = ^".."
 @export var animation_tree_path: NodePath = ^"../AnimationTree"
 
-@export var idle_state: StringName = &"Idle"
-@export var walk_state: StringName = &"Walk"
-@export var run_state: StringName = &"Run"
-@export var charge_state: StringName = &"Charge"
+var player: CharacterBody3D
+var animation_tree: AnimationTree
+var playback: AnimationNodeStateMachinePlayback
 
-@export var move_threshold: float = 0.05
-@export var run_threshold: float = 10.0
+var current_state: AnimState = AnimState.IDLE
 
-var player: CharacterBody3D = null
-var animation_tree: AnimationTree = null
-var playback: AnimationNodeStateMachinePlayback = null
-var current_state: StringName = &""
 
-func _ready() -> void:
-	player = get_node_or_null(player_path) as CharacterBody3D
-	animation_tree = get_node_or_null(animation_tree_path) as AnimationTree
+func _ready():
 
-	if player == null:
-		push_error("AnimationController: Player not found.")
-		return
+	player = get_node(player_path)
+	animation_tree = get_node(animation_tree_path)
 
-	if animation_tree == null:
-		push_error("AnimationController: AnimationTree not found.")
-		return
-
-	playback = animation_tree["parameters/playback"] as AnimationNodeStateMachinePlayback
-
-	if playback == null:
-		push_error("AnimationController: Could not access AnimationTree playback.")
-		return
+	playback = animation_tree["parameters/playback"]
 
 	animation_tree.active = true
-	_travel_if_needed(idle_state)
 
-func _physics_process(_delta: float) -> void:
-	if player == null or playback == null:
+	_set_state(AnimState.IDLE)
+
+
+func _physics_process(_delta):
+
+	var speed: float = player.current_speed
+	var vertical_velocity: float = player.velocity.y
+	var on_floor: bool = player.is_on_floor()
+
+	var forward: bool = Input.is_action_pressed("move_forward")
+	var crouch: bool = Input.is_action_pressed("crouch")
+	var sprint: bool = Input.is_action_pressed("sprint")
+	var turn: float = Input.get_axis("turn_left","turn_right")
+
+	var moving: bool = abs(speed) > 0.05
+	var drifting: bool = crouch and speed > 0.0
+	var sprinting: bool = sprint and forward and player.stamina > 0.0
+
+
+	# --- AIR ---
+	if not on_floor:
+
+		if crouch:
+			_set_state(AnimState.DROPKICK)
+			return
+
+		if vertical_velocity > 0:
+			_set_state(AnimState.JUMP)
+		else:
+			_set_state(AnimState.FALL)
+
 		return
 
-	var speed: float = float(player.get("current_speed"))
-	var is_moving: bool = abs(speed) > move_threshold
-	var charging: bool = Input.is_action_pressed("sprint") and is_moving
 
-	if charging and speed > 0.0:
-		_travel_if_needed(charge_state)
+	# --- CROUCH ---
+	if crouch:
+
+		if forward:
+
+			if drifting and turn < 0 and speed > 0.5:
+				_set_state(AnimState.DRIFTL)
+				return
+
+			elif drifting and turn > 0 and speed > 0.5:
+				_set_state(AnimState.DRIFTR)
+				return
+
+			else:
+				_set_state(AnimState.DROPKICK)
+				return
+
+		else:
+			_set_state(AnimState.CROUCH)
+			return
+
+
+	# --- TURNING ---
+	if turn < -0.1 and not sprinting and speed > 0.5:
+		_set_state(AnimState.TURNL)
 		return
 
-	elif speed >= run_threshold:
-		_travel_if_needed(run_state)
-	elif abs(speed) > move_threshold:
-		_travel_if_needed(walk_state)
+	elif turn > 0.1 and not sprinting and speed > 0.5:
+		_set_state(AnimState.TURNR)
+		return
+
+
+	# --- CHARGE ---
+	if sprinting and speed > 0:
+		_set_state(AnimState.CHARGE)
+		return
+
+
+	# --- LOCOMOTION ---
+	if speed >= 10:
+		_set_state(AnimState.RUN)
+
+	elif moving:
+		_set_state(AnimState.WALK)
+
 	else:
-		_travel_if_needed(idle_state)
+		_set_state(AnimState.IDLE)
 
-func _travel_if_needed(state_name: StringName) -> void:
-	if current_state == state_name:
+
+func _set_state(new_state: AnimState):
+
+	if new_state == current_state:
 		return
 
-	playback.travel(state_name)
-	current_state = state_name
+	current_state = new_state
+
+	match new_state:
+
+		AnimState.IDLE:
+			playback.travel("Idle")
+
+		AnimState.WALK:
+			playback.travel("Walk")
+
+		AnimState.RUN:
+			playback.travel("Run")
+
+		AnimState.CHARGE:
+			playback.travel("Charge")
+
+		AnimState.JUMP:
+			playback.travel("Jump")
+
+		AnimState.FALL:
+			playback.travel("Fall")
+
+		AnimState.DRIFTL:
+			playback.travel("DriftL")
+
+		AnimState.DRIFTR:
+			playback.travel("DriftR")
+
+		AnimState.CROUCH:
+			playback.travel("Crouch")
+
+		AnimState.DROPKICK:
+			playback.travel("Drop Kick")
+
+		AnimState.TURNL:
+			playback.travel("TurnL")
+
+		AnimState.TURNR:
+			playback.travel("TurnR")
