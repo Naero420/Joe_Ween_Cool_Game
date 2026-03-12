@@ -129,6 +129,7 @@ var input_crouch: bool
 # Player states
 var is_sprinting: bool
 var is_drifting: bool
+var is_falling: bool
 
 
 func _ready() -> void:
@@ -158,6 +159,8 @@ func _physics_process(delta: float) -> void:
 
 	if Input.is_action_just_pressed(&"jump") and is_on_floor():
 		velocity.y = jump_velocity
+	
+	is_falling = velocity.y < 0
 
 	_input_process()
 	_move_process(delta)
@@ -173,20 +176,6 @@ func _physics_process(delta: float) -> void:
 	camera_rig.rotation.y = cam_yaw_offset
 
 	"""
-	# --------------------
-	# Momentum leaning (visual only)
-	# --------------------
-	var target_lean: float = turn_input * lerpf(1.0, speed_ratio, lean_from_speed)
-
-	var rate: float = (lean_speed if abs(target_lean) > abs(lean_amount) else lean_return_speed)
-	var t: float = clampf(rate * delta, 0.0, 1.0)
-
-	lean_amount = lerpf(lean_amount, target_lean, t)
-
-	var lean_radians: float = deg_to_rad(max_lean_degrees) * lean_amount
-	visual_pivot.rotation.z = -lean_radians
-	camera_rig.rotation.z = -lean_radians * 0.35
-
 	# --------------------
 	# Camera FOV + Shake (sprinting)
 	# --------------------
