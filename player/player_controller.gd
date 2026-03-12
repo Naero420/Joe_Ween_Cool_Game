@@ -123,6 +123,7 @@ var current_speed: float = 0.0
 var _input_forward: bool
 var _input_back: bool
 var _turn_input: float
+var _input_move: float
 var _input_sprint: bool
 var _input_crouch: bool
 var _input_walk: bool
@@ -228,13 +229,13 @@ func _input_process() -> void:
 	_input_forward = Input.is_action_pressed(&"move_forward")
 	_input_back = Input.is_action_pressed(&"move_backward")
 	_turn_input = Input.get_axis(&"turn_left", &"turn_right")
+	_input_move = Input.get_axis(&"move_backward", &"move_forward")
 	_input_sprint = Input.is_action_pressed(&"sprint")
 	_input_crouch = Input.is_action_pressed(&"crouch")
 	_input_walk = Input.is_action_pressed(&"walk")
 
 	# TODO: Should these variables be moved to move_process instead of local?
 	is_sprinting = _input_sprint and _input_forward and stamina > 0.0
-	#is_braking = _input_back || (_input_walk && _input_forward)
 	is_walking = _input_back || (_input_walk && _input_forward)
 	is_drifting = _input_crouch and current_speed > 0.0 and not is_walking
 
@@ -270,10 +271,7 @@ func _move_process(delta: float) -> void:
 	# Movement: Friction
 	var friction_force: float = 0 
 
-	if (is_walking && is_on_floor()):
-		friction_force = 0
-	else:
-		friction_force += _get_friction_force()
+	friction_force += _get_friction_force()
 
 	# Bunny hop logic: Friction is given a delay before it is applied when the player touches the floor
 	if is_on_floor():
@@ -284,7 +282,7 @@ func _move_process(delta: float) -> void:
 	else:
 		friction_time = friction_delay
 
-	if _input_forward:
+	if _input_move > 0:
 		# Slow the player down through braking before they can walk
 		if is_walking:
 			if current_speed < walk_speed + stop_threshold:
@@ -298,7 +296,7 @@ func _move_process(delta: float) -> void:
 			if is_on_floor():
 				acceleration_force += friction_force
 
-	if _input_back:	
+	elif _input_move < 0:	
 		# If the player is moving forward, break to 0 before walking backwards.
 		if (current_speed <= stop_threshold):
 			current_speed = -walk_speed
