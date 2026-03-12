@@ -308,9 +308,9 @@ func _move_process(delta: float) -> void:
 	# Applies the acceleration to velocity
 	current_speed += acceleration_force * delta
 
-	# Caps speed at max speed in both directions
-	# TODO: Remove speed limit. This limit is here to stop the speed from running from going infinite. Write logic to handle that first before removing this.
-	current_speed = clampf(current_speed, -max_speed, max_speed)
+	# Prevents speed from going infinite when the player runs forward
+	if (_input_forward):
+		current_speed = clampf(current_speed, -max_speed, max_speed)
 	
 	# Snap tiny speeds to 0
 	if abs(current_speed) < stop_threshold:
