@@ -64,6 +64,26 @@ use_collision = true
 size = Vector3(9, 4, 10)
 material = ExtResource("2_pvbb1")
 
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="Terrain/CSGCombiner3D" unique_id=1806230581]
+transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 49, 0.5, -14)
+polygon = PackedVector2Array(0, 0, 0, 2, 1, 2, 8, 0)
+depth = 5.0
+material = ExtResource("4_rl8gb")
+
+[node name="Big Ramp" type="CSGPolygon3D" parent="Terrain" unique_id=1531670133]
+transform = Transform3D(-2.1855692e-07, 0, -1, 0, 1, 0, 1, 0, -2.1855692e-07, 35, 0.5, 0)
+use_collision = true
+polygon = PackedVector2Array(0, 0, 0, 2, 0, 12, 29, 0)
+depth = 5.0
+material = ExtResource("4_rl8gb")
+
+[node name="Big Ramp" type="CSGPolygon3D" parent="Terrain/Big Ramp" unique_id=1946499554]
+transform = Transform3D(-1, 0, 2.6226832e-07, 0, 1, 0, -2.6226832e-07, 0, -1, -1.0709273e-06, -0.100000024, -4.899994)
+use_collision = true
+polygon = PackedVector2Array(0, 0, 0, 2, 0, 12, 29, 0)
+depth = 5.0
+material = ExtResource("4_rl8gb")
+
 [node name="Obstacles" type="Node3D" parent="." unique_id=648208069]
 
 [node name="HUD" parent="." unique_id=1238948079 instance=ExtResource("6_i5e4g")]
