@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://fvhe7f3mm187"
-path="res://.godot/imported/Eef.glb-44e733d889dfc863804a2f6cf5c52e7b.scn"
+path="res://.godot/imported/Eef.glb-45e4602390868d71ffea2f54b3e2429b.scn"
 
 [deps]
 
-source_file="res://Animation/Eef.glb"
-dest_files=["res://.godot/imported/Eef.glb-44e733d889dfc863804a2f6cf5c52e7b.scn"]
+source_file="res://player/Animation/Eef.glb"
+dest_files=["res://.godot/imported/Eef.glb-45e4602390868d71ffea2f54b3e2429b.scn"]
 
 [params]
 
@@ -41,7 +41,7 @@ _subresources={
 "animations": {
 "Charge": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/Charge.res",
+"save_to_file/fallback_path": "res://player/Animation/Charge.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://cgnwen4d1ehau",
 "settings/loop_mode": 0,
@@ -6209,7 +6209,7 @@ _subresources={
 },
 "DriftL": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/DriftL.res",
+"save_to_file/fallback_path": "res://player/Animation/DriftL.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://cbie8rant6goi",
 "settings/loop_mode": 0,
@@ -10321,7 +10321,7 @@ _subresources={
 },
 "Drop Kick": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/Drop Kick.res",
+"save_to_file/fallback_path": "res://player/Animation/Drop Kick.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://s7wdjnunyyp5",
 "settings/loop_mode": 0,
@@ -14433,7 +14433,7 @@ _subresources={
 },
 "Idle": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/Idle.res",
+"save_to_file/fallback_path": "res://player/Animation/Idle.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://dpfnx7vwqqlms",
 "settings/loop_mode": 0,
@@ -16489,7 +16489,7 @@ _subresources={
 },
 "Jump": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/Jump.res",
+"save_to_file/fallback_path": "res://player/Animation/Jump.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://co67va3nrtihi",
 "settings/loop_mode": 0,
@@ -18545,7 +18545,7 @@ _subresources={
 },
 "Run": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/Run.res",
+"save_to_file/fallback_path": "res://player/Animation/Run.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://lujbvl6ss5kf",
 "settings/loop_mode": 0,
@@ -20601,7 +20601,7 @@ _subresources={
 },
 "TurnL": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/TurnL.res",
+"save_to_file/fallback_path": "res://player/Animation/TurnL.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://bujr781cmoqn",
 "settings/loop_mode": 0,
@@ -22657,7 +22657,7 @@ _subresources={
 },
 "TurnR": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/TurnR.res",
+"save_to_file/fallback_path": "res://player/Animation/TurnR.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://be1jy6yoy5io3",
 "settings/loop_mode": 0,
@@ -24713,7 +24713,7 @@ _subresources={
 },
 "Walk": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://Animation/Walk.res",
+"save_to_file/fallback_path": "res://player/Animation/Walk.res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://bedv0ho84jpeu",
 "settings/loop_mode": 0,
