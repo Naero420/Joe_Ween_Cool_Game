@@ -120,7 +120,7 @@ var gravity: float = 9.8
 var friction_time: float = 0
 
 ## Represents forward speed
-var current_speed: float = 0.0
+#var current_speed: float = 0.0
 
 # Player Inputs
 var _input_forward: bool
@@ -240,7 +240,7 @@ func _input_process() -> void:
 	# TODO: Should these variables be moved to move_process instead of local?
 	is_sprinting = _input_sprint and _input_forward and stamina > 0.0
 	is_walking = _input_back || (_input_walk && _input_forward)
-	is_drifting = _input_crouch and current_speed > 0.0 and not is_walking
+	#is_drifting = _input_crouch and current_speed > 0.0 and not is_walking
 
 func _move_process(delta: float) -> void:
 	var vel : Vector3 = velocity
@@ -304,15 +304,17 @@ func _move_process(delta: float) -> void:
 	# Apply friction force
 	accel += -_vec23(friction_force)
 
-	# TODO: Implement running
-	# TODO: Implement drifting
+	# TODO: Drifting
 	# TODO: Braking
 	# TODO: Walking
 
 	if _input_move > 0:
 		var forward_accel : Vector3 = Vector3()
-		# Negates friction when running forwards
-		forward_accel += forward * (acceleration + friction)
+		# Negates friction when running forwards on the ground
+		if can_friction_apply: 
+			forward_accel += forward * (acceleration + friction)
+		else:
+			forward_accel += forward * acceleration
 		
 		# Limit Forward acceleration when max speed is achieved
 		var _forward_speed : float = get_forward_speed()
@@ -403,6 +405,7 @@ func _move_process(delta: float) -> void:
 	move_and_slide()
 	"""
 
+"""
 # Returns the force value of the object. #TODO: Reword this to sound more comphresionsible
 func _get_friction_force() -> float:
 	var force: float = 0.0
@@ -416,6 +419,7 @@ func _get_friction_force() -> float:
 			force += friction
 
 	return -force
+"""
 
 # Converts vector 3 to vector 2
 func _vec32(v: Vector3) -> Vector2:
