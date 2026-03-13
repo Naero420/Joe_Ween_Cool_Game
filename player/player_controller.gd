@@ -306,6 +306,8 @@ func _move_process(delta: float) -> void:
 
 	# TODO: Implement running
 	# TODO: Implement drifting
+	# TODO: Braking
+	# TODO: Walking
 
 	if _input_move > 0:
 		var forward_accel : Vector3 = Vector3()
