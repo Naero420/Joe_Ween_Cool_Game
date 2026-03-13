@@ -3,6 +3,7 @@ extends CanvasLayer
 @onready var stamina_bar: ProgressBar = $StaminaBar
 @onready var speedometer: Label = $Speedometer
 @onready var fps_counter: Label = $FPSMeter
+@onready var speedometer_forward: Label = $Speedometer_Forward
 
 @export var player_path: NodePath
 
@@ -38,6 +39,8 @@ func speed_process() -> void:
 	var player_speed: Vector3 = player.get("velocity")
 	var horizontal_speed = Vector2(player_speed[0],player_speed[2])
 	speedometer.text = str(horizontal_speed.length()) + " m/s"
+
+	speedometer_forward.text = "Forward Speed: " + str(player.call("get_forward_speed")) + " m/s"
 
 func fps_process() -> void:
 	fps_counter.text = str(Engine.get_frames_per_second()) + " fps"

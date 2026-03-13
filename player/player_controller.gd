@@ -246,14 +246,18 @@ func _move_process(delta: float) -> void:
 	# Turning slows down as speed increases
 	# --------------------
 
-	var speed_ratio: float = clampf(abs(current_speed) / sprint_speed, 0.0, 1.0)
+	#TODO: Add a separate variable to adjust the threshold for speed ratio
+	var speed_ratio: float = clampf(_vec32(velocity).length() / max_speed, 0.0, 1.0)
+
 	var turn_multiplier: float = lerpf(1.0, min_turn_multiplier_at_top_speed, speed_ratio)
 	var drift_turn_multiplier: float = lerpf(1.0, min_drift_turn_multiplier_at_top_speed, speed_ratio)
 
+	var _rotation_delta: float = 0.0
 	if not is_sprinting:
-		rotation.y -= _turn_input * rotation_speed * turn_multiplier * delta
+		_rotation_delta -= _turn_input * rotation_speed * turn_multiplier * delta
 	elif is_drifting:
-		rotation.y -= _turn_input * drift_rotation_speed * drift_turn_multiplier * delta
+		_rotation_delta -= _turn_input * drift_rotation_speed * drift_turn_multiplier * delta
+	rotation.y += _rotation_delta
 
 	# Stamina recovery with delay
 	if is_sprinting:
@@ -266,7 +270,65 @@ func _move_process(delta: float) -> void:
 			stamina = min(stamina + stamina_recovery * delta, max_stamina)
 
 	# Movement
+	var accel : Vector3 = Vector3(0,0,0)
+	var forward: Vector3 = -transform.basis.z
+	var vel : Vector3 = velocity
+
+	# Calculate friction
+	var friction_force: Vector2 = Vector2(0,0)
+	# Bunny hop logic: Friction is given a delay before it is applied when the player touches the floor
+	if is_on_floor():
+		if friction_time <= 0:
+			
+			friction_force += friction * _vec32(vel).normalized()
+		else:
+			friction_time = clampf(friction_time - delta, 0, friction_delay)
+	else:
+		friction_time = friction_delay
+
+	# Turning in the air conserves forward momentum
+	#if not is_on_floor():
+
+
+	
+	accel += -_vec23(friction_force)
+
+	if _input_move > 0:
+		var forward_accel : Vector3 = Vector3()
+		forward_accel += forward * (acceleration + friction)
+		
+		# Limit Forward acceleration when max speed is achieved
+		var _forward_speed : float = get_forward_speed()
+		
+		# TODO: Rewrite this logic to be more accurate
+		var _ratio = clampf(_forward_speed / max_speed, 0.0, 1.0)
+		if (_ratio >= 1):
+			accel += forward_accel * (lerpf((0), 1, 1 - _ratio))
+		else:
+			accel += forward_accel
+	elif _input_move < 0:
+		accel += -forward * (acceleration + friction)
+
+	print_debug(str(_vec32(vel * forward)) + " = " + str(vel.dot(forward)))
+
+	
+
+	vel += accel * delta
+
+	if (_vec32(vel).length() < stop_threshold):
+		vel.x = 0
+		vel.z = 0
+	
+	# Applies velocity to object
+	velocity.x = vel.x
+	velocity.z = vel.z
+
+	move_and_slide()
+	"""
 	var acceleration_force : float = 0
+	var forward_speed : float = 0.0
+
+	var forward: Vector3 = -transform.basis.z
 
 	# Movement: Friction
 	var friction_force: float = 0 
@@ -285,8 +347,8 @@ func _move_process(delta: float) -> void:
 	if _input_move > 0:
 		# Slow the player down through braking before they can walk
 		if is_walking:
-			if current_speed < walk_speed + stop_threshold:
-				current_speed = walk_speed
+			if forward_speed < walk_speed + stop_threshold:
+				forward_speed = walk_speed
 				is_braking = false
 			else: 
 				acceleration_force += -brake_force
@@ -298,30 +360,31 @@ func _move_process(delta: float) -> void:
 
 	elif _input_move < 0:	
 		# If the player is moving forward, break to 0 before walking backwards.
-		if (current_speed <= stop_threshold):
-			current_speed = -walk_speed
+		if (forward_speed <= stop_threshold):
+			forward_speed = -walk_speed
 			is_braking = false
 		else:
 			acceleration_force += -brake_force
 			is_braking = true
 		
 	# Applies the acceleration to velocity
-	current_speed += acceleration_force * delta
+	forward_speed += acceleration_force * delta
 
 	# Prevents speed from going infinite when the player runs forward
 	if (_input_forward):
-		current_speed = clampf(current_speed, -max_speed, max_speed)
+		forward_speed = clampf(forward_speed, -max_speed, max_speed)
 	
 	# Snap tiny speeds to 0
-	if abs(current_speed) < stop_threshold:
-		current_speed = 0.0
+	if abs(forward_speed) < stop_threshold:
+		forward_speed = 0.0
 
 	# Apply movement in facing direction
-	var forward: Vector3 = -transform.basis.z
-	velocity.x = forward.x * current_speed
-	velocity.z = forward.z * current_speed
+	
+	velocity.x = forward.x * forward_speed
+	velocity.z = forward.z * forward_speed
 
 	move_and_slide()
+	"""
 
 # Returns the force value of the object. #TODO: Reword this to sound more comphresionsible
 func _get_friction_force() -> float:
@@ -336,6 +399,14 @@ func _get_friction_force() -> float:
 			force += friction
 
 	return -force
+
+# Converts vector 3 to vector 2
+func _vec32(v: Vector3) -> Vector2:
+	return Vector2(v.x, v.z)
+
+# Converts vector 3 to vector 2
+func _vec23(v: Vector2) -> Vector3:
+	return Vector3(v.x, 0, v.y)
 
 func _trigger_mouse_attack(swipe: Vector2, swipe_speed: float) -> void:
 	var dir: Vector2 = swipe.normalized()
@@ -384,8 +455,12 @@ func _trigger_mouse_attack_tolerant(swipe: Vector2, swipe_speed: float) -> void:
 	else:
 		jab()
 		
+# Returns the real horizontal speed of the object. (This can never be a negative number)
 func get_speed() -> float :
-	return current_speed
+	return Vector2(velocity.x, velocity.z).length()
+
+func get_forward_speed() -> float :
+	return velocity.dot(-global_transform.basis.z)
 
 # --------------------
 # Attack hooks (replace prints with animations/hitboxes later)

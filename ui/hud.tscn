@@ -22,6 +22,14 @@ offset_bottom = 959.0
 text = "m/s"
 horizontal_alignment = 2
 
+[node name="Speedometer_Forward" type="Label" parent="." unique_id=1459997142]
+offset_left = 993.0
+offset_top = 917.0
+offset_right = 1280.0
+offset_bottom = 940.0
+text = "Forward Speed: 0 m/s"
+horizontal_alignment = 2
+
 [node name="FPSMeter" type="Label" parent="." unique_id=154239734]
 offset_left = 993.0
 offset_top = 1.0
