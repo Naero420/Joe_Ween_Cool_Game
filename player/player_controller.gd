@@ -19,11 +19,14 @@ extends CharacterBody3D
 @export var acceleration: float = 14.0
 ## Force applied to player when they are on the ground.
 @export var friction: float = 15.0
+## Seconds passed before friction can be applied (Used for bunny hopping)
+@export var friction_delay: float = 0.15
 ## Force multiplier applied to player when they are on the ground and drifting (0.25 = 25% of friction is applied)
 @export var drift_friction_multiplier: float = 0.2
 ## Force applied when the backward movement key is held when player is moving forward
 @export var brake_force: float = 28.0
-#@export var friction: float = 30.0
+## Conserves forward velocity (0 = no forward velocity is conserved when turning; 1 = 100% of forward velocity is conserved while turning)
+@export var conserve_velocity_when_turning_multiplier: float = 1.0
 
 @export var jump_velocity: float = 4.5
 
@@ -114,8 +117,8 @@ var attack_cd_timer: float = 0.0
 # Runtime
 # --------------------
 var gravity: float = 9.8
-var friction_delay: float = 0.1
 var friction_time: float = 0
+
 ## Represents forward speed
 var current_speed: float = 0.0
 
@@ -240,7 +243,8 @@ func _input_process() -> void:
 	is_drifting = _input_crouch and current_speed > 0.0 and not is_walking
 
 func _move_process(delta: float) -> void:
-	
+	var vel : Vector3 = velocity
+
 	# --------------------
 	# Turning (disabled while sprinting)
 	# Turning slows down as speed increases
@@ -272,29 +276,40 @@ func _move_process(delta: float) -> void:
 	# Movement
 	var accel : Vector3 = Vector3(0,0,0)
 	var forward: Vector3 = -transform.basis.z
-	var vel : Vector3 = velocity
+	
 
-	# Calculate friction
+	# Calculate friction:
+	# Friction is applied in the opposite direction of the object's velocity
+	var can_friction_apply: bool = false
 	var friction_force: Vector2 = Vector2(0,0)
 	# Bunny hop logic: Friction is given a delay before it is applied when the player touches the floor
+	
 	if is_on_floor():
 		if friction_time <= 0:
-			
-			friction_force += friction * _vec32(vel).normalized()
+			can_friction_apply = true
 		else:
 			friction_time = clampf(friction_time - delta, 0, friction_delay)
 	else:
 		friction_time = friction_delay
+		can_friction_apply = false
 
+	if can_friction_apply:
+		friction_force += friction * _vec32(vel).normalized()
 	# Turning in the air conserves forward momentum
-	#if not is_on_floor():
-
-
+	elif (_turn_input != 0):
+		var _vel_rot = (vel.rotated(Vector3.UP, _rotation_delta) * conserve_velocity_when_turning_multiplier) \
+			+ (vel.rotated(Vector3.UP, _rotation_delta) * (1 - conserve_velocity_when_turning_multiplier))
+		vel = _vel_rot
 	
+	# Apply friction force
 	accel += -_vec23(friction_force)
+
+	# TODO: Implement running
+	# TODO: Implement drifting
 
 	if _input_move > 0:
 		var forward_accel : Vector3 = Vector3()
+		# Negates friction when running forwards
 		forward_accel += forward * (acceleration + friction)
 		
 		# Limit Forward acceleration when max speed is achieved
@@ -309,7 +324,7 @@ func _move_process(delta: float) -> void:
 	elif _input_move < 0:
 		accel += -forward * (acceleration + friction)
 
-	print_debug(str(_vec32(vel * forward)) + " = " + str(vel.dot(forward)))
+	#print_debug(str(_vec32(vel * forward)) + " = " + str(vel.dot(forward)))
 
 	
 
