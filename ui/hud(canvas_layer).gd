@@ -38,9 +38,9 @@ func stamina_process() -> void:
 func speed_process() -> void:
 	var player_speed: Vector3 = player.get("velocity")
 	var horizontal_speed = Vector2(player_speed[0],player_speed[2])
-	speedometer.text = str(horizontal_speed.length()) + " m/s"
+	speedometer.text = str(horizontal_speed.length()).pad_decimals(2) + " m/s"
 
-	speedometer_forward.text = "Forward Speed: " + str(player.call("get_forward_speed")) + " m/s"
+	speedometer_forward.text = "Forward Speed: " + str(player.call("get_forward_speed")).pad_decimals(2) + " m/s"
 
 func fps_process() -> void:
 	fps_counter.text = str(Engine.get_frames_per_second()) + " fps"
