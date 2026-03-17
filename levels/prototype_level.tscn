@@ -21,6 +21,7 @@ fog_enabled = true
 
 [node name="player" parent="." unique_id=365831199 instance=ExtResource("1_i5e4g")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+friction = 17.5
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=640592314]
 transform = Transform3D(-0.017231792, 0.9508785, 0.30908456, -0.05293035, -0.30956456, 0.9494041, 0.99844956, -2.0470939e-08, 0.055664677, 21.140406, 5.0283966, 0)

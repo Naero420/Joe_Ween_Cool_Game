@@ -1,5 +1,4 @@
 extends CharacterBody3D
-
 @onready var visual_pivot: Node3D = $VisualPivot
 @onready var camera_rig: Node3D = $CameraRig
 @onready var spring_arm: SpringArm3D = $CameraRig/SpringArm3D
@@ -31,9 +30,9 @@ extends CharacterBody3D
 @export var jump_velocity: float = 4.5
 
 @export_subgroup("Turning")
-## Turning speed in degrees
+## Turning speed in radians
 @export var rotation_speed: float = 5
-## Turning speed in degrees while drifting
+## Turning speed in radians while drifting
 @export var drift_rotation_speed: float = 10
 
 ## Slows down turning at high speed (0.25 = 25% turning at top speed)
@@ -113,14 +112,24 @@ var gesture_timer: float = 0.0
 var gesture_sum: Vector2 = Vector2.ZERO
 var attack_cd_timer: float = 0.0
 
+## @experimental
+enum moveState {
+	IDLE,
+	RUNNING,
+	WALKING,
+	BRAKING,
+	STOPPING,
+	DRIFTING,
+	CROUCHING,
+	SLIDING,
+	CHARGING,
+}
+
 # --------------------
 # Runtime
 # --------------------
 var gravity: float = 9.8
 var friction_time: float = 0
-
-## Represents forward speed
-#var current_speed: float = 0.0
 
 # Player Inputs
 var _input_forward: bool
@@ -132,11 +141,13 @@ var _input_crouch: bool
 var _input_walk: bool
 
 # Player states
-var is_sprinting: bool
-var is_drifting: bool
-var is_falling: bool
-var is_walking: bool
-var is_braking: bool
+var is_sprinting: bool ## @deprecated
+var is_drifting: bool ## @deprecated
+var is_falling: bool ## @deprecated
+var is_walking: bool ## @deprecated
+var is_braking: bool ## @deprecated
+
+var state: moveState = moveState.IDLE
 
 
 func _ready() -> void:
@@ -240,7 +251,7 @@ func _input_process() -> void:
 	# TODO: Should these variables be moved to move_process instead of local?
 	is_sprinting = _input_sprint and _input_forward and stamina > 0.0
 	is_walking = _input_back || (_input_walk && _input_forward)
-	#is_drifting = _input_crouch and current_speed > 0.0 and not is_walking
+	is_drifting = _input_crouch and get_speed() > 0.0 and not is_walking
 
 func _move_process(delta: float) -> void:
 	var vel : Vector3 = velocity
@@ -273,10 +284,14 @@ func _move_process(delta: float) -> void:
 		else:
 			stamina = min(stamina + stamina_recovery * delta, max_stamina)
 
+
 	# Movement
 	var accel : Vector3 = Vector3(0,0,0)
 	var forward: Vector3 = -transform.basis.z
-	
+	var _use_acceleration: bool = true
+	## Current speed of the player object.
+	## @deprecated: Use get_speed() instead
+	var _current_speed: float = 0
 
 	# Calculate friction:
 	# Friction is applied in the opposite direction of the object's velocity
@@ -302,43 +317,66 @@ func _move_process(delta: float) -> void:
 		vel = _vel_rot
 	
 	# Apply friction force
-	accel += -_vec23(friction_force)
+	#accel += -_vec23(friction_force)
 
 	# TODO: Drifting
 	# TODO: Braking
 	# TODO: Walking
 
+	#var want_walk: bool = _input_walk || _input_move < 0
+
+	# Moving forward
 	if _input_move > 0:
-		var forward_accel : Vector3 = Vector3()
-		# Negates friction when running forwards on the ground
-		if can_friction_apply: 
-			forward_accel += forward * (acceleration + friction)
-		else:
-			forward_accel += forward * acceleration
-		
-		# Limit Forward acceleration when max speed is achieved
-		var _forward_speed : float = get_forward_speed()
-		
-		# TODO: Rewrite this logic to be more accurate
-		var _ratio = clampf(_forward_speed / max_speed, 0.0, 1.0)
-		if (_ratio >= 1):
-			accel += forward_accel * (lerpf((0), 1, 1 - _ratio))
-		else:
-			accel += forward_accel
+		if _input_walk: # Walking forward
+			if vel.length() >= walk_speed + stop_threshold:
+				accel += -_brake(vel, accel, 0)
+			else:
+				_use_acceleration = false
+				_current_speed += walk_speed
+		else: # Running (normal movement)
+			var forward_accel : Vector3 = Vector3()
+			# Negates friction when running forwards on the ground
+			if can_friction_apply: 
+				forward_accel += forward * (acceleration + friction)
+			else:
+				forward_accel += forward * acceleration
+			
+			# Limit Forward acceleration when max speed is achieved
+			var _forward_speed : float = get_forward_speed()
+			
+			# TODO: Rewrite this logic to be more accurate
+			var _ratio = clampf(_forward_speed / max_speed, 0.0, 1.0)
+			if (_ratio >= 1):
+				accel += forward_accel * (lerpf((0), 1, 1 - _ratio))
+			else:
+				accel += forward_accel
+	# Moving back = walking back
 	elif _input_move < 0:
-		accel += -forward * (acceleration + friction)
-
-	#print_debug(str(_vec32(vel * forward)) + " = " + str(vel.dot(forward)))
-
+		if vel.length() >= walk_speed + stop_threshold:
+			# Replace with braking?
+			#accel += -forward * (acceleration + friction)
+			accel += -_brake(vel, accel, 0)
+		else:
+			_use_acceleration = false
+			_current_speed += -walk_speed
+	# Braking when there's no movement input
+	elif _input_walk:
+		accel += -_brake(vel, accel, 0)
 	
-
-	vel += accel * delta
+	# Applies velocity to object
+	if _use_acceleration:
+		# Apply friction force
+		accel += -_vec23(friction_force)	
+		vel += accel * delta
+	else: 
+		vel.x = forward.x * _current_speed
+		vel.z = forward.z * _current_speed
 
 	if (_vec32(vel).length() < stop_threshold):
 		vel.x = 0
 		vel.z = 0
+		state = moveState.IDLE
 	
-	# Applies velocity to object
 	velocity.x = vel.x
 	velocity.z = vel.z
 
@@ -421,6 +459,26 @@ func _get_friction_force() -> float:
 	return -force
 """
 
+# Slows down the player faster than friction. Returns the acceleration
+# limit: stop braking when speed is lower than limit
+# ngl it feels horrible not being to pass by reference
+func _brake(vel: Vector3, accel: Vector3, limit: float) -> Vector3:
+	var brake_accel: Vector3 = Vector3()
+	var _current_speed: float = get_speed()
+	var direction: Vector3 = _vec23(_vec32(vel)).normalized()
+
+	if _current_speed >= limit - stop_threshold:
+		var bf: float = brake_force
+		if bf > friction:
+			bf = bf - friction
+		else:
+			bf = friction - bf
+
+		brake_accel.x += bf * direction.x
+		brake_accel.z += bf * direction.z
+
+	return brake_accel
+
 # Converts vector 3 to vector 2
 func _vec32(v: Vector3) -> Vector2:
 	return Vector2(v.x, v.z)
@@ -482,6 +540,13 @@ func get_speed() -> float :
 
 func get_forward_speed() -> float :
 	return velocity.dot(-global_transform.basis.z)
+
+func get_movement_state() -> moveState :
+	return state
+
+# TODO:
+func is_slowing_down() -> bool :
+	return false
 
 # --------------------
 # Attack hooks (replace prints with animations/hitboxes later)
