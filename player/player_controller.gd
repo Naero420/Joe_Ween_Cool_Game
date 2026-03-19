@@ -29,6 +29,7 @@ extends CharacterBody3D
 @export var converse_velocity_when_drift_turning_multiplier: float = 0.8
 
 @export var jump_velocity: float = 4.5
+@export var super_jump_velocity: float = 2.0
 
 @export_subgroup("Turning")
 ## Turning speed in radians
@@ -174,10 +175,16 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	# Applies gravity and jumping logic
 	if not is_on_floor():
-		velocity.y -= gravity * delta
+		velocity.y += -gravity * delta
 
 	if Input.is_action_just_pressed(&"jump") and is_on_floor():
-		velocity.y = jump_velocity
+		if _input_crouch:
+			velocity.y += super_jump_velocity + jump_velocity
+			var _vel : float = 1.5 if (get_forward_speed() <= (max_speed + 8) + stop_threshold) else 0.0
+			velocity.x += -transform.basis.z.x * _vel
+			velocity.z += -transform.basis.z.z * _vel
+		else:
+			velocity.y += jump_velocity
 	
 	is_falling = velocity.y < 0
 
