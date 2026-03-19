@@ -322,18 +322,12 @@ func _move_process(delta: float) -> void:
 		vel = _vel_rot
 	
 	# Apply friction force
-	#accel += -_vec23(friction_force)
-
-	# TODO: Drifting
-	
-
-	#var want_walk: bool = _input_walk || _input_move < 0
 
 	# Moving forward
 	if _input_move > 0:
 		if _input_walk: # Walking forward
 			if vel.length() >= walk_speed + stop_threshold:
-				accel += -_brake(vel, accel, 0)
+				accel += -_brake(vel, 0)
 			else:
 				_use_acceleration = false
 				_current_speed += walk_speed
@@ -357,15 +351,13 @@ func _move_process(delta: float) -> void:
 	# Moving back = walking back
 	elif _input_move < 0:
 		if vel.length() >= walk_speed + stop_threshold:
-			# Replace with braking?
-			#accel += -forward * (acceleration + friction)
-			accel += -_brake(vel, accel, 0)
+			accel += -_brake(vel, 0)
 		else:
 			_use_acceleration = false
 			_current_speed += -walk_speed
 	# Braking when there's no movement input
 	elif _input_walk:
-		accel += -_brake(vel, accel, 0)
+		accel += -_brake(vel, 0)
 	
 	# Applies velocity to object
 	if _use_acceleration:
@@ -385,88 +377,11 @@ func _move_process(delta: float) -> void:
 	velocity.z = vel.z
 
 	move_and_slide()
-	"""
-	var acceleration_force : float = 0
-	var forward_speed : float = 0.0
-
-	var forward: Vector3 = -transform.basis.z
-
-	# Movement: Friction
-	var friction_force: float = 0 
-
-	friction_force += _get_friction_force()
-
-	# Bunny hop logic: Friction is given a delay before it is applied when the player touches the floor
-	if is_on_floor():
-		if friction_time <= 0:
-			acceleration_force += -friction_force
-		else:
-			friction_time = clampf(friction_time - delta, 0, friction_delay)
-	else:
-		friction_time = friction_delay
-
-	if _input_move > 0:
-		# Slow the player down through braking before they can walk
-		if is_walking:
-			if forward_speed < walk_speed + stop_threshold:
-				forward_speed = walk_speed
-				is_braking = false
-			else: 
-				acceleration_force += -brake_force
-				is_braking = true
-		else:
-			acceleration_force += acceleration
-			if is_on_floor():
-				acceleration_force += friction_force
-
-	elif _input_move < 0:	
-		# If the player is moving forward, break to 0 before walking backwards.
-		if (forward_speed <= stop_threshold):
-			forward_speed = -walk_speed
-			is_braking = false
-		else:
-			acceleration_force += -brake_force
-			is_braking = true
-		
-	# Applies the acceleration to velocity
-	forward_speed += acceleration_force * delta
-
-	# Prevents speed from going infinite when the player runs forward
-	if (_input_forward):
-		forward_speed = clampf(forward_speed, -max_speed, max_speed)
-	
-	# Snap tiny speeds to 0
-	if abs(forward_speed) < stop_threshold:
-		forward_speed = 0.0
-
-	# Apply movement in facing direction
-	
-	velocity.x = forward.x * forward_speed
-	velocity.z = forward.z * forward_speed
-
-	move_and_slide()
-	"""
-
-"""
-# Returns the force value of the object. #TODO: Reword this to sound more comphresionsible
-func _get_friction_force() -> float:
-	var force: float = 0.0
-	# Applies friction when the player is on the ground
-	if is_on_floor():
-		if is_drifting:
-			force += -friction * drift_friction_multiplier
-		elif current_speed > 0 :
-			force += -friction
-		elif current_speed < 0 :
-			force += friction
-
-	return -force
-"""
 
 # Slows down the player faster than friction. Returns the acceleration
 # limit: stop braking when speed is lower than limit
 # ngl it feels horrible not being to pass by reference
-func _brake(vel: Vector3, accel: Vector3, limit: float) -> Vector3:
+func _brake(vel: Vector3, limit: float) -> Vector3:
 	var brake_accel: Vector3 = Vector3()
 	var _current_speed: float = get_speed()
 	var direction: Vector3 = _vec23(_vec32(vel)).normalized()
