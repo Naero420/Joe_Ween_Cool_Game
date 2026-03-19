@@ -26,6 +26,7 @@ extends CharacterBody3D
 @export var brake_force: float = 28.0
 ## Conserves forward velocity (0 = no forward velocity is conserved when turning; 1 = 100% of forward velocity is conserved while turning)
 @export var conserve_velocity_when_turning_multiplier: float = 1.0
+@export var converse_velocity_when_drift_turning_multiplier: float = 0.8
 
 @export var jump_velocity: float = 4.5
 
@@ -147,7 +148,7 @@ var is_falling: bool ## @deprecated
 var is_walking: bool ## @deprecated
 var is_braking: bool ## @deprecated
 
-var state: moveState = moveState.IDLE
+var state: moveState = moveState.IDLE ## @experimental
 
 
 func _ready() -> void:
@@ -290,7 +291,6 @@ func _move_process(delta: float) -> void:
 	var forward: Vector3 = -transform.basis.z
 	var _use_acceleration: bool = true
 	## Current speed of the player object.
-	## @deprecated: Use get_speed() instead
 	var _current_speed: float = 0
 
 	# Calculate friction:
@@ -310,6 +310,11 @@ func _move_process(delta: float) -> void:
 
 	if can_friction_apply:
 		friction_force += friction * _vec32(vel).normalized()
+		if _input_crouch && _turn_input != 0:
+			var _multi: float = 0.8
+			var _vel_rot = (vel.rotated(Vector3.UP, _rotation_delta) * converse_velocity_when_drift_turning_multiplier) \
+			+ (vel.rotated(Vector3.UP, _rotation_delta) * (1 - converse_velocity_when_drift_turning_multiplier))
+			vel = _vel_rot
 	# Turning in the air conserves forward momentum
 	elif (_turn_input != 0):
 		var _vel_rot = (vel.rotated(Vector3.UP, _rotation_delta) * conserve_velocity_when_turning_multiplier) \
@@ -320,8 +325,7 @@ func _move_process(delta: float) -> void:
 	#accel += -_vec23(friction_force)
 
 	# TODO: Drifting
-	# TODO: Braking
-	# TODO: Walking
+	
 
 	#var want_walk: bool = _input_walk || _input_move < 0
 
@@ -366,7 +370,7 @@ func _move_process(delta: float) -> void:
 	# Applies velocity to object
 	if _use_acceleration:
 		# Apply friction force
-		accel += -_vec23(friction_force)	
+		accel += -_vec23(friction_force if not _input_crouch else friction_force * drift_friction_multiplier)	
 		vel += accel * delta
 	else: 
 		vel.x = forward.x * _current_speed
